@@ -25,8 +25,8 @@ input:focus,button:focus-visible{outline:2px solid var(--y);outline-offset:2px}
 .row{display:flex;gap:8px;margin-top:10px}.row>*{flex:1}
 .or{text-align:center;color:var(--mut);margin:14px 0 10px;font-size:.9rem}
 .hero{display:flex;justify-content:center;perspective:800px;height:150px;margin:6px 0 10px}
-.hero .card{margin:14px -6px;transform:rotate(var(--r));animation:float 4s ease-in-out infinite;animation-delay:var(--d)}
-@keyframes float{50%{transform:translateY(-16px) rotateY(28deg) rotate(var(--r))}}
+.hero .card{margin:14px -6px;transform:rotate(var(--rot));animation:float 4s ease-in-out infinite;animation-delay:var(--d)}
+@keyframes float{50%{transform:translateY(-16px) rotateY(28deg) rotate(var(--rot))}}
 .code{font-size:2.4rem;font-weight:900;letter-spacing:.25em;text-align:center}
 h2{font-size:1.05rem;margin:14px 0 8px}
 .pl{display:flex;align-items:center;gap:10px;padding:8px 12px;background:rgba(0,0,0,.25);border-radius:14px;margin-bottom:8px;animation:up .4s backwards}
@@ -70,11 +70,11 @@ h2{font-size:1.05rem;margin:14px 0 8px}
 #status{text-align:center;font-size:1.15rem;font-weight:800;min-height:1.6em;transition:color .3s}
 #status.me{color:var(--y);animation:bump 1s infinite}
 @keyframes bump{50%{transform:scale(1.07)}}
-#hand{display:flex;justify-content:center;padding:34px 8px calc(16px + env(safe-area-inset-bottom));perspective:900px;min-height:170px}
-#hand .card{cursor:pointer;margin-left:var(--ml);transform-origin:50% 170%;transform:translateY(var(--y)) rotate(var(--a)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s cubic-bezier(.2,.8,.2,1),filter .25s,box-shadow .25s}
+#hand{overflow-x:auto;overflow-y:hidden;padding:90px 8px calc(16px + env(safe-area-inset-bottom));margin-top:-50px;min-height:200px;scrollbar-width:none;pointer-events:none}#hand::-webkit-scrollbar{display:none}#fan{display:flex;width:max-content;margin:0 auto;perspective:900px}
+#hand .card{pointer-events:auto;cursor:pointer;margin-left:var(--ml);transform-origin:50% 170%;transform:translateY(var(--dy)) rotate(var(--a)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));transition:transform .25s cubic-bezier(.2,.8,.2,1),filter .25s,box-shadow .25s}
 #hand .card:first-child{margin-left:0}
 #hand .card.no{filter:brightness(.5) saturate(.7);cursor:default}
-#hand .card.ok{transform:translateY(calc(var(--y) - 16px)) rotate(var(--a)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));box-shadow:0 0 0 3px rgba(255,255,255,.6),0 10px 24px rgba(0,0,0,.5)}
+#hand .card.ok{transform:translateY(calc(var(--dy) - 16px)) rotate(var(--a)) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));box-shadow:0 0 0 3px rgba(255,255,255,.6),0 10px 24px rgba(0,0,0,.5)}
 #hand .card.ok:hover{transform:translateY(-46px) scale(1.16) rotateX(var(--rx,0deg)) rotateY(var(--ry,0deg));z-index:9}
 .new{animation:deal .5s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:var(--d,0ms)}
 @keyframes deal{from{transform:translateY(-320px) scale(.4) rotate(40deg);opacity:0}}
@@ -123,7 +123,7 @@ h2{font-size:1.05rem;margin:14px 0 8px}
   <div class="top"><div class="opps" id="opps"></div><span id="ms"></span><button class="ib" id="mute" aria-label="Sound">🔊</button><button class="ib" id="leave2" aria-label="Leave">✕</button></div>
   <div class="scene"><div class="table"><div id="tint"></div><div id="ring"></div><div id="deck" aria-label="Draw pile"></div><div id="pile"></div></div></div>
   <div id="status"></div>
-  <div id="hand"></div>
+  <div id="hand"><div id="fan"></div></div>
 </main>
 
 <div class="ov" id="over" hidden><div><h2 id="wtxt" style="font-size:1.8rem;margin:0 0 6px"></h2><p class="sub" id="wsub"></p><div class="row"><button class="btn go" id="again">Back to lobby</button><button class="btn" id="leave3">Leave</button></div></div></div>
@@ -268,51 +268,4 @@ function onEvent(ev,s){
     if(ev.uno)setTimeout(()=>{pop('UNO!','#fff');snd(880,.3,'sawtooth',0,.1)},ev.fx||v==='S'||v==='R'?1100:700);
   }else if(ev.k==='draw'){
     snd(300,.08);
-    if(ev.by!==s.me)for(let k=0;k<ev.n;k++)fly(null,deck,chipRect(ev.by),{back:1,delay:k*110,dur:450,end:.4});
-  }
-}
-function drawHand(s,mine,base){
-  const h=$('hand'),n=s.hand.length,av=Math.min(innerWidth,700)-24,keys={};let ni=0;
-  const ml=n*64+(n-1)*6<=av?6:-(n*64-av)/Math.max(1,n-1);
-  h.innerHTML='';
-  s.hand.forEach((c,i)=>{
-    const k=c.c+c.v;keys[k]=(keys[k]||0)+1;const isNew=keys[k]>(prevKeys[k]||0);
-    const ok=mine&&(c.c==='w'||c.c===s.color||c.v===s.top.v);
-    const e=mk(c,false,'button');e.className+=(ok?' ok':' no')+(isNew?' new':'');
-    const o=i-(n-1)/2;
-    e.style.cssText=`--a:${(o*Math.min(5,36/n)).toFixed(1)}deg;--y:${(o*o*Math.min(1.6,10/n)).toFixed(1)}px;--ml:${ml.toFixed(1)}px;--d:${isNew?base+ni++*70:0}ms`;
-    e.setAttribute('aria-label',(NM[c.c]||'Wild')+' '+c.v);
-    e.onclick=()=>{
-      if(!ok)return;pendRect=e.getBoundingClientRect();
-      if(c.c==='w'){pend=i;$('cpick').hidden=false}else send({t:'play',i});
-    };
-    h.appendChild(e);
-  });
-  prevKeys=keys;
-}
-$('hand').addEventListener('pointermove',e=>{
-  const c=e.target.closest('.card.ok');if(!c)return;const r=c.getBoundingClientRect();
-  c.style.setProperty('--ry',((e.clientX-r.left)/r.width-.5)*36+'deg');c.style.setProperty('--rx',(.5-(e.clientY-r.top)/r.height)*36+'deg');
-});
-$('hand').addEventListener('pointerout',e=>{const c=e.target.closest('.card');if(c){c.style.removeProperty('--rx');c.style.removeProperty('--ry')}});
-$('deck').onclick=()=>{if(S&&S.st&&S.turn===S.me){pendRect=null;send({t:'draw'})}};
-$('sw').innerHTML=COL.map(c=>`<button style="background:${HEX[c]}" data-c="${c}" aria-label="${NM[c]}"></button>`).join('');
-$('sw').onclick=e=>{const c=e.target.dataset.c;if(!c)return;$('cpick').hidden=true;send({t:'play',i:pend,col:c})};
-
-/* ---------- lobby / home ---------- */
-$('startb').onclick=()=>send({t:'start'});
-$('bot').onclick=()=>send({t:'bot'});
-$('again').onclick=()=>send({t:'reset'});
-const myName=()=>{const n=$('name').value.trim().slice(0,14)||'Player'+(Math.random()*90+10|0);try{localStorage.setItem('uno_name',n)}catch(e){}return n};
-$('create').onclick=()=>{$('create').disabled=$('join').disabled=true;connect({t:'create',name:myName()})};
-$('join').onclick=()=>{const c=$('jcode').value.trim().toUpperCase();if(c.length<5)return toast('Enter the 5-letter room code');$('create').disabled=$('join').disabled=true;connect({t:'join',code:c,name:myName()})};
-const link=()=>location.origin+location.pathname+'?room='+(S?S.code:'');
-$('copy').onclick=()=>{(navigator.clipboard?navigator.clipboard.writeText(link()):Promise.reject()).then(()=>toast('Invite link copied')).catch(()=>prompt('Copy this link:',link()))};
-if(navigator.share){$('share').hidden=false;$('share').onclick=()=>navigator.share({title:'Pocket Uno',text:'Join my Uno game!',url:link()})}
-[{c:'r',v:'7'},{c:'b',v:'+2'},{c:'w',v:'W'},{c:'g',v:'R'},{c:'y',v:'9'}].forEach((c,i)=>{const e=mk(c);e.style.cssText=`--r:${(i-2)*12}deg;--d:${i*.3}s`;$('hero').appendChild(e)});
-try{$('name').value=localStorage.getItem('uno_name')||''}catch(e){}
-const q=new URLSearchParams(location.search).get('room');if(q)$('jcode').value=q.toUpperCase();
-if(ss('tok')&&ss('code'))connect({t:'rejoin',code:ss('code'),tok:ss('tok')});
-</script>
-</body>
-</html>
+    if(ev.by!==s.me)for(let k=0;k<ev.n;k++)fly(null,deck,chipRect(ev.by),{back:1,delay:k*110,dur:450
